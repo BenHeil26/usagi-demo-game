@@ -13,11 +13,13 @@ function _init()
     },
     x = 10,
     y = 10,
+    direction = 0, -- angle in radians
     health = 100,
     stopped = false
   }
 end
 
+-- game constants
 SPEED = 100
 SIZE = {
   x = 10,
@@ -36,8 +38,13 @@ SCREEN = {
 GAME_OVER_OFFSET = 16
 GAME_OVER_MULT = 2
 
+-- helper functions
 local function bool_to_int(bool)
   return bool and 1 or 0
+end
+
+local function vec_magnitude(vec)
+  return math.sqrt(vec.x ^ 2 + vec.y ^ 2)
 end
 
 function _update(dt)
@@ -53,6 +60,11 @@ function _update(dt)
     State.input_vector = util.vec_normalize(State.input_vector)
     State.x = (State.x + State.input_vector.x * SPEED * dt) % usagi.GAME_W
     State.y = (State.y + State.input_vector.y * SPEED * dt) % usagi.GAME_H
+
+    -- TODO: lerp vector for smooth rotation (maybe)
+    if vec_magnitude(State.input_vector) ~= 0 then
+      State.direction = math.atan(State.input_vector.y, State.input_vector.x)
+    end
   end
 
   -- game logic
@@ -71,8 +83,17 @@ end
 
 function _draw(dt)
   gfx.clear(gfx.COLOR_BLACK)
-  gfx.rect_fill(State.x, State.y, SIZE.x, SIZE.y, gfx.COLOR_PINK)
 
+  -- player
+  gfx.spr_ex(
+    1,
+    State.x, State.y,
+    false, false,
+    State.direction,
+    gfx.COLOR_WHITE, 1
+  )
+
+  -- UI
 
   -- health bar
   local color = gfx.COLOR_GREEN
@@ -100,6 +121,8 @@ function _draw(dt)
     HEALTH_BAR.y,
     color)
 
+
+  -- game over
   if State.health <= 0 then
     local text = 'GAME OVER'
     gfx.text_ex(
