@@ -7,13 +7,18 @@ function _init()
   -- Stash mutable game state in a capitalized global like `State` so it
   -- survives reloads; F5 calls _init again to reset.
   State = {
+    input_vector = {
+      x = 0,
+      y = 0
+    },
     x = 10,
     y = 10,
     health = 100,
+    stopped = false
   }
 end
 
-SPEED = 50
+SPEED = 100
 SIZE = {
   x = 10,
   y = 10,
@@ -31,25 +36,30 @@ SCREEN = {
 GAME_OVER_OFFSET = 16
 GAME_OVER_MULT = 2
 
+local function bool_to_int(bool)
+  return bool and 1 or 0
+end
 
 function _update(dt)
   -- input and movement
-  -- TODO: Vectorize movement so diagonal is not faster
-  if input.held(input.UP) then
-    State.y -= SPEED * dt
-  end
-  if input.held(input.DOWN) then
-    State.y += SPEED * dt
-  end
-  if input.held(input.RIGHT) then
-    State.x += SPEED * dt
-  end
-  if input.held(input.LEFT) then
-    State.x -= SPEED * dt
+  if not State.stopped then
+    State.input_vector = {
+      x = bool_to_int(input.held(input.RIGHT)) -
+          bool_to_int(input.held(input.LEFT)),
+      y = bool_to_int(input.held(input.DOWN)) -
+          bool_to_int(input.held(input.UP))
+    }
+
+    State.input_vector = util.vec_normalize(State.input_vector)
+    State.x += State.input_vector.x * SPEED * dt
+    State.y += State.input_vector.y * SPEED * dt
   end
 
   -- game logic
-
+  if State.health <= 0 and not State.stopped then
+    State.stopped = true
+    effect.screen_shake(2, 2)
+  end
 
   -- debug controls
   if usagi.IS_DEV then
@@ -62,6 +72,7 @@ end
 function _draw(dt)
   gfx.clear(gfx.COLOR_BLACK)
   gfx.rect_fill(State.x, State.y, SIZE.x, SIZE.y, gfx.COLOR_PINK)
+
 
   -- health bar
   gfx.rect_ex(
@@ -88,7 +99,13 @@ function _draw(dt)
       GAME_OVER_MULT,
       0,
       gfx.COLOR_RED,
-      1.0
+      1
     )
+  end
+
+  -- debug stuff
+  if usagi.IS_DEV then
+    gfx.text(
+      State.input_vector.x .. ", " .. State.input_vector.y, 10, 10, gfx.COLOR_GREEN)
   end
 end
