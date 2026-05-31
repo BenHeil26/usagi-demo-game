@@ -28,9 +28,13 @@ SCREEN = {
   w = 320,
   h = 180,
 }
+GAME_OVER_OFFSET = 16
+GAME_OVER_MULT = 2
+
 
 function _update(dt)
-  -- input
+  -- input and movement
+  -- TODO: Vectorize movement so diagonal is not faster
   if input.held(input.UP) then
     State.y -= SPEED * dt
   end
@@ -44,27 +48,47 @@ function _update(dt)
     State.x -= SPEED * dt
   end
 
-  if input.key_held(input.KEY_F) then
-    State.health -= 1
+  -- game logic
+
+
+  -- debug controls
+  if usagi.IS_DEV then
+    if input.key_held(input.KEY_F) then
+      State.health -= 1
+    end
   end
 end
 
 function _draw(dt)
   gfx.clear(gfx.COLOR_BLACK)
   gfx.rect_fill(State.x, State.y, SIZE.x, SIZE.y, gfx.COLOR_PINK)
+
   -- health bar
   gfx.rect_ex(
-    SCREEN.w - HEALTH_BAR.x - HEALTH_BAR.padding - HEALTH_BAR.thickness,
-    SCREEN.h - HEALTH_BAR.y - HEALTH_BAR.padding - HEALTH_BAR.thickness,
+    usagi.GAME_W - HEALTH_BAR.x - HEALTH_BAR.padding - HEALTH_BAR.thickness,
+    usagi.GAME_H - HEALTH_BAR.y - HEALTH_BAR.padding - HEALTH_BAR.thickness,
     HEALTH_BAR.x + (2 * HEALTH_BAR.thickness),
     HEALTH_BAR.y + (2 * HEALTH_BAR.thickness),
     HEALTH_BAR.thickness,
     gfx.COLOR_WHITE)
 
   gfx.rect_fill(
-    SCREEN.w - HEALTH_BAR.x - HEALTH_BAR.padding,
-    SCREEN.h - HEALTH_BAR.y - HEALTH_BAR.padding,
+    usagi.GAME_W - HEALTH_BAR.x - HEALTH_BAR.padding,
+    usagi.GAME_H - HEALTH_BAR.y - HEALTH_BAR.padding,
     State.health,
     HEALTH_BAR.y,
     gfx.COLOR_RED)
+
+  if State.health <= 0 then
+    local text = 'GAME OVER'
+    gfx.text_ex(
+      text,
+      (usagi.GAME_W / 2) - (usagi.measure_text(text)),
+      (usagi.GAME_H / 2) - GAME_OVER_OFFSET,
+      GAME_OVER_MULT,
+      0,
+      gfx.COLOR_RED,
+      1.0
+    )
+  end
 end
