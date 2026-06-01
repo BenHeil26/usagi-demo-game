@@ -16,7 +16,8 @@ function _init()
     direction = 0, -- angle in radians
     health = 100,
     stopped = false,
-    astroids = {} -- {sprite_idx, x, y, scale, rotation, speed, direction}
+    -- {sprite_idx, x, y, scale, rotation, speed, direction, spin}
+    astroids = {}
   }
 end
 
@@ -39,8 +40,10 @@ SCREEN = {
 GAME_OVER_OFFSET = 16
 GAME_OVER_MULT = 2
 SPRITES = {
-  astroid = 1,
-  player = 2,
+  player = 1,
+  astroid1 = 2,
+  astroid2 = 3,
+  astroid3 = 4,
 }
 ASTROID_INTERVAL = 5000
 -- }}}
@@ -52,6 +55,19 @@ end
 
 local function vec_magnitude(vec)
   return math.sqrt(vec.x ^ 2 + vec.y ^ 2)
+end
+
+local function spr_scaled(idx, x, y, flip_x, flip_y, rotation, tint, alpha, scale)
+  gfx.sspr_ex(
+    0, (idx - 1) * usagi.SPRITE_SIZE, -- adjust for 0 vs 1 based index
+    usagi.SPRITE_SIZE, usagi.SPRITE_SIZE,
+    x, y,
+    usagi.SPRITE_SIZE * scale, usagi.SPRITE_SIZE * scale,
+    flip_x, flip_y,
+    rotation,
+    tint,
+    alpha
+  )
 end
 
 -- }}}
@@ -77,18 +93,20 @@ local function spawn_astroid()
     y = (usagi.GAME_H / 2) - location.y
   })
 
+  local sprite_idx = math.random(SPRITES.astroid1, SPRITES.astroid3)
   local scale = math.random(3)
   local rotation = math.random() * 2 * math.pi
   local speed = math.random(30, 70)
+  local spin = math.random(2) % 2 == 0 and 1 or -1
 
-  -- {sprite_idx, location, scale, rotation, speed, direction}
   table.insert(State.astroids, {
-    sprite_idx = SPRITES.astroid,
+    sprite_idx = sprite_idx,
     location = location,
     scale = scale,
     rotation = rotation,
     speed = speed,
-    direction = direction
+    direction = direction,
+    spin = spin
   })
 end
 -- }}}
@@ -126,7 +144,7 @@ function _update(dt)
       y = value.location.y + (value.direction.y * value.speed * dt)
     }
 
-    value.rotation += dt * math.random(5)
+    value.rotation += dt * math.random(5) * value.spin
   end
   -- }}}
 
@@ -157,12 +175,14 @@ function _draw(dt)
 
   -- astroids {{{
   for _, value in ipairs(State.astroids) do
-    gfx.spr_ex(
+    spr_scaled(
       value.sprite_idx,
       value.location.x, value.location.y,
       false, false,
       value.rotation,
-      gfx.COLOR_WHITE, 1
+      gfx.COLOR_WHITE,
+      1,
+      value.scale
     )
   end
   -- }}}
