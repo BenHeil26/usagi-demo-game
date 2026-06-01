@@ -19,7 +19,8 @@ function _init()
     health = 100,
     stopped = false,
     -- {sprite_idx, location, scale, rotation, speed, direction, spin}
-    astroids = {}
+    astroids = {},
+    debug = false
   }
 end
 
@@ -174,6 +175,35 @@ function _update(dt)
     end
 
     -- astroid collisions
+    for jdx, other in ipairs(State.astroids) do
+      if idx == jdx then goto continue end
+      if util.rect_overlap(
+            {
+              x = value.location.x,
+              y = value.location.y,
+              w = usagi.SPRITE_SIZE * value.scale,
+              h = usagi.SPRITE_SIZE * value.scale,
+            },
+            {
+              x = other.location.x,
+              y = other.location.y,
+              w = usagi.SPRITE_SIZE * other.scale,
+              h = usagi.SPRITE_SIZE * other.scale,
+            })
+      then
+        local r2 = util.vec_normalize({
+          x = value.direction.x - other.direction.x,
+          y = value.direction.y - other.direction.y
+        })
+        local r1 = util.vec_normalize({
+          x = other.direction.x - value.direction.x,
+          y = other.direction.y - value.direction.y
+        })
+        value.direction = r1
+        other.direction = r2
+      end
+      ::continue::
+    end
 
     -- astroid off screen
     if
@@ -196,6 +226,9 @@ function _update(dt)
     end
     if input.key_pressed(input.KEY_R) then
       spawn_astroid()
+    end
+    if input.key_pressed(input.KEY_BACKTICK) then
+      State.debug = not State.debug
     end
   end
   -- }}}
@@ -231,16 +264,6 @@ function _draw(dt)
   -- UI {{{
 
   -- health bar {{{
-  local color = gfx.COLOR_GREEN
-  if State.health < 25 then
-    color = gfx.COLOR_RED
-  else
-    if State.health < 50 then
-      color = gfx.COLOR_YELLOW
-    end
-  end
-
-
   gfx.rect_ex(
     usagi.GAME_W - HEALTH_BAR.x - HEALTH_BAR.padding - HEALTH_BAR.thickness,
     usagi.GAME_H - HEALTH_BAR.y - HEALTH_BAR.padding - HEALTH_BAR.thickness,
@@ -254,8 +277,7 @@ function _draw(dt)
     usagi.GAME_H - HEALTH_BAR.y - HEALTH_BAR.padding,
     State.health,
     HEALTH_BAR.y,
-    color)
-
+    gfx.COLOR_WHITE)
   -- }}}
 
 
@@ -276,10 +298,10 @@ function _draw(dt)
   -- }}}
 
   -- debug stuff {{{
-  if usagi.IS_DEV then
-    gfx.text(
-      State.input_vector.x .. ", " .. State.input_vector.y, 10, 10, gfx.COLOR_GREEN)
-    gfx.text("Astroids: " .. #State.astroids, 10, 20, gfx.COLOR_GREEN)
+  if usagi.IS_DEV and State.debug then
+    gfx.text_ex(
+      State.input_vector.x .. ", " .. State.input_vector.y, 0, 10, 1, 0, gfx.COLOR_GREEN, .7)
+    gfx.text_ex("Astroids: " .. #State.astroids, 0, 20, 1, 0, gfx.COLOR_GREEN, .7)
   end
   -- }}}
 end
