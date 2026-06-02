@@ -22,6 +22,7 @@ function _init()
     astroids = {},
     start_time = os.time(),
     time = 0,
+    last_astroid = 0,
     debug = false
   }
 end
@@ -50,7 +51,7 @@ SPRITES = {
   astroid2 = 3,
   astroid3 = 4,
 }
-ASTROID_INTERVAL = 5000
+ASTROID_INTERVAL = 1
 HITSTOP_INTERVAL = .2
 DAMAGE = 5
 -- }}}
@@ -151,6 +152,10 @@ function _update(dt)
 
   if not State.stopped then
     State.time = get_timer()
+    if State.time - State.last_astroid > ASTROID_INTERVAL then
+      spawn_astroid()
+      State.last_astroid = State.time
+    end
   end
 
   local destroy_list = {}
