@@ -330,6 +330,7 @@ function _update(dt)
   end
   -- }}}
 
+
   -- debug controls {{{
   if usagi.IS_DEV then
     if input.key_pressed(input.KEY_BACKTICK) then
@@ -356,7 +357,7 @@ function _update(dt)
 end
 
 function _draw(dt)
-  gfx.clear(gfx.COLOR_BLACK)
+  gfx.clear(gfx.COLOR_DARK_GRAY)
 
   -- player {{{
   gfx.spr_ex(
@@ -448,6 +449,13 @@ function _draw(dt)
   end
   -- }}}
 
+  -- }}}
+
+  -- shader uniforms {{{
+  gfx.shader_uniform("u_time", usagi.elapsed)
+  gfx.shader_uniform("u_resolution", { usagi.GAME_W, usagi.GAME_H })
+  -- varies the intensity of the scanline to emulate CRT scan artifacts
+  gfx.shader_uniform("u_scanline", .1 + math.sin(State.time) / 2)
   -- }}}
 
   -- debug stuff {{{
