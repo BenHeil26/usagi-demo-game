@@ -31,8 +31,10 @@ function _init()
     last_bullet = 0,
     time = 0,
     last_astroid = 0,
-    debug = false
+    debug = false,
+    shader_on = true,
   }
+  gfx.shader_set('crt')
 end
 
 -- game constants {{{
@@ -330,14 +332,24 @@ function _update(dt)
 
   -- debug controls {{{
   if usagi.IS_DEV then
-    if input.key_held(input.KEY_F) then
-      State.health -= 1
-    end
-    if input.key_pressed(input.KEY_R) then
-      spawn_astroid()
-    end
     if input.key_pressed(input.KEY_BACKTICK) then
       State.debug = not State.debug
+    end
+    if State.debug then
+      if input.key_held(input.KEY_F) then
+        State.health -= 1
+      end
+      if input.key_pressed(input.KEY_R) then
+        spawn_astroid()
+      end
+      if input.key_pressed(input.KEY_1) then
+        State.shader_on = not State.shader_on
+        if State.shader_on then
+          gfx.shader_set('crt')
+        else
+          gfx.shader_set(nil)
+        end
+      end
     end
   end
   -- }}}
