@@ -29,7 +29,6 @@ function _init()
     bullets = {},
     ammo = 5,
     last_bullet = 0,
-    start_time = os.time(),
     time = 0,
     last_astroid = 0,
     debug = false
@@ -67,7 +66,7 @@ SPRITES = {
   astroid2 = 3,
   astroid3 = 4,
 }
-ASTROID_INTERVAL = 1
+ASTROID_INTERVAL = .5
 HITSTOP_INTERVAL = .2
 DAMAGE = 5
 BULLET_SPEED = 200
@@ -96,10 +95,6 @@ local function spr_scaled(idx, x, y, flip_x, flip_y, rotation, tint, alpha, scal
     tint,
     alpha
   )
-end
-
-local function get_timer()
-  return os.time() - State.start_time
 end
 
 -- }}}
@@ -197,7 +192,7 @@ function _update(dt)
   end
 
   if not State.stopped then
-    State.time = get_timer()
+    State.time += dt
     if State.time - State.last_astroid > ASTROID_INTERVAL then
       spawn_astroid()
       State.last_astroid = State.time
@@ -422,7 +417,7 @@ function _draw(dt)
   -- }}}
 
   -- timer {{{
-  local time = State.time .. ""
+  local time = math.ceil(State.time) .. ""
   gfx.text(time, (usagi.GAME_W / 2) - (usagi.measure_text(time) / 2), 0, gfx.COLOR_WHITE)
   -- }}}
 
