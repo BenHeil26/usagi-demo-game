@@ -7,7 +7,7 @@ function _init()
   -- Stash mutable game state in a capitalized global like `State` so it
   -- survives reloads; F5 calls _init again to reset.
   State = {
-    input_vector = {
+    input = {
       x = 0,
       y = 0
     },
@@ -15,11 +15,18 @@ function _init()
       x = usagi.GAME_W / 2,
       y = usagi.GAME_H / 2,
     },
-    direction = 0, -- angle in radians
+    direction = {
+      x = 1,
+      y = 0,
+    },
+    -- angle in radians
+    sprite_direction = 0,
     health = 100,
     stopped = false,
     -- {sprite_idx, location, scale, rotation, speed, direction, spin}
     astroids = {},
+    -- {location, speed, direction}
+    bullets = {},
     start_time = os.time(),
     time = 0,
     last_astroid = 0,
@@ -54,6 +61,7 @@ SPRITES = {
 ASTROID_INTERVAL = 1
 HITSTOP_INTERVAL = .2
 DAMAGE = 5
+BULLET_SPEED = 200
 -- }}}
 
 -- helper functions {{{
@@ -121,25 +129,50 @@ local function spawn_astroid()
     spin = spin,
   })
 end
+
+-- spawns a bullet at the front of the ship that fires in the direction
+-- the ship is facing until it reaches an edge of the screen
+local function spawn_bullet()
+  -- get the starting location
+  local start = {
+    x = State.location.x + (usagi.SPRITE_SIZE / 2)
+        + (State.direction.x * (usagi.SPRITE_SIZE / 2)),
+    y = State.location.y + (usagi.SPRITE_SIZE / 2)
+        + (State.direction.y * (usagi.SPRITE_SIZE / 2))
+  }
+
+  table.insert(State.bullets, {
+    location = start,
+    speed = BULLET_SPEED,
+    direction = State.direction,
+  })
+end
+
 -- }}}
 
 function _update(dt)
   -- input and player movement {{{
   if not State.stopped then
-    State.input_vector = {
+    State.input = {
       x = bool_to_int(input.held(input.RIGHT)) -
           bool_to_int(input.held(input.LEFT)),
       y = bool_to_int(input.held(input.DOWN)) -
           bool_to_int(input.held(input.UP))
     }
 
-    State.input_vector = util.vec_normalize(State.input_vector)
-    State.location.x = (State.location.x + State.input_vector.x * SPEED * dt) % usagi.GAME_W
-    State.location.y = (State.location.y + State.input_vector.y * SPEED * dt) % usagi.GAME_H
-
     -- TODO: lerp vector for smooth rotation (maybe)
-    if vec_magnitude(State.input_vector) ~= 0 then
-      State.direction = math.atan(State.input_vector.y, State.input_vector.x)
+    if vec_magnitude(State.input) ~= 0 then
+      State.direction = State.input
+      State.sprite_direction = math.atan(State.input.y, State.input.x)
+    end
+
+    State.input = util.vec_normalize(State.input)
+    State.location.x = (State.location.x + State.input.x * SPEED * dt) % usagi.GAME_W
+    State.location.y = (State.location.y + State.input.y * SPEED * dt) % usagi.GAME_H
+
+
+    if input.pressed(input.BTN1) then
+      spawn_bullet()
     end
   end
   -- }}}
@@ -158,7 +191,8 @@ function _update(dt)
     end
   end
 
-  local destroy_list = {}
+  -- astroids {{{
+  local destroy_astroids = {}
 
   for idx, value in ipairs(State.astroids) do
     value.location = {
@@ -186,7 +220,7 @@ function _update(dt)
       effect.hitstop(HITSTOP_INTERVAL)
       effect.flash(HITSTOP_INTERVAL, gfx.COLOR_RED)
       State.health -= DAMAGE * value.scale
-      table.insert(destroy_list, idx)
+      table.insert(destroy_astroids, idx)
     end
 
     -- astroid collisions
@@ -225,11 +259,44 @@ function _update(dt)
         value.location.x < 0 or value.location.x > usagi.GAME_W or
         value.location.y < 0 or value.location.y > usagi.GAME_H
     then
-      table.insert(destroy_list, idx)
+      table.insert(destroy_astroids, idx)
     end
   end
 
-  for _, value in ipairs(destroy_list) do
+
+  -- }}}
+
+  -- bullets {{{
+  local destroy_bullets = {}
+
+  for _, value in ipairs(State.bullets) do
+    value.location = {
+      x = value.location.x + value.direction.x * value.speed * dt,
+      y = value.location.y + value.direction.y * value.speed * dt,
+    }
+  end
+
+  for idx, value in ipairs(State.bullets) do
+    for jdx, other in ipairs(State.astroids) do
+      if util.point_in_rect(
+            value.location,
+            {
+              x = other.location.x,
+              y = other.location.y,
+              w = usagi.SPRITE_SIZE * other.scale,
+              h = usagi.SPRITE_SIZE * other.scale,
+            }
+          )
+      then
+        table.insert(destroy_astroids, jdx)
+        table.insert(destroy_bullets, idx)
+      end
+    end
+  end
+
+  -- }}}
+
+  for _, value in ipairs(destroy_astroids) do
     table.remove(State.astroids, value)
   end
   -- }}}
@@ -257,7 +324,7 @@ function _draw(dt)
     SPRITES.player,
     State.location.x, State.location.y,
     false, false,
-    State.direction,
+    State.sprite_direction,
     gfx.COLOR_WHITE, 1
   )
   --}}}
@@ -275,6 +342,10 @@ function _draw(dt)
     )
   end
   -- }}}
+
+  for _, value in ipairs(State.bullets) do
+    gfx.rect_ex(value.location.x, value.location.y, 1, 1, 1, gfx.COLOR_WHITE)
+  end
 
   -- UI {{{
 
@@ -318,9 +389,31 @@ function _draw(dt)
 
   -- debug stuff {{{
   if usagi.IS_DEV and State.debug then
+    -- input and direction vector
     gfx.text_ex(
-      State.input_vector.x .. ", " .. State.input_vector.y, 0, 10, 1, 0, gfx.COLOR_GREEN, .7)
-    gfx.text_ex("Astroids: " .. #State.astroids, 0, 20, 1, 0, gfx.COLOR_GREEN, .7)
+      "I:" .. State.input.x .. ", " .. State.input.y, 0, 10, 1, 0, gfx.COLOR_GREEN, .7)
+    gfx.text_ex(
+      "D:" .. State.direction.x .. ", " .. State.direction.y, 0, 20, 1, 0, gfx.COLOR_GREEN, .7)
+    gfx.text_ex(
+      "Da:" .. State.sprite_direction, 0, 30, 1, 0, gfx.COLOR_GREEN, .7)
+    -- astroid count
+    gfx.text_ex("Astroids: " .. #State.astroids, 0, 40, 1, 0, gfx.COLOR_GREEN, .7)
+    -- astroid colliders
+    for _, value in ipairs(State.astroids) do
+      gfx.rect_ex(
+        value.location.x, value.location.y,
+        usagi.SPRITE_SIZE * value.scale,
+        usagi.SPRITE_SIZE * value.scale,
+        1, gfx.COLOR_RED
+      )
+    end
+    -- player collider
+    gfx.rect_ex(
+      State.location.x, State.location.y,
+      usagi.SPRITE_SIZE,
+      usagi.SPRITE_SIZE,
+      1, gfx.COLOR_GREEN
+    )
   end
   -- }}}
 end
