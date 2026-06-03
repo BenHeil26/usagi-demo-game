@@ -277,6 +277,7 @@ function _update(dt)
   end
 
   for idx, value in ipairs(State.bullets) do
+    -- astroid collision
     for jdx, other in ipairs(State.astroids) do
       if util.point_in_rect(
             value.location,
@@ -292,12 +293,24 @@ function _update(dt)
         table.insert(destroy_bullets, idx)
       end
     end
+
+    -- bullet off screen
+    if
+        value.location.x < 0 or value.location.x > usagi.GAME_W or
+        value.location.y < 0 or value.location.y > usagi.GAME_H
+    then
+      table.insert(destroy_bullets, idx)
+    end
   end
 
   -- }}}
 
   for _, value in ipairs(destroy_astroids) do
     table.remove(State.astroids, value)
+  end
+
+  for _, value in ipairs(destroy_bullets) do
+    table.remove(State.bullets, value)
   end
   -- }}}
 
@@ -343,9 +356,11 @@ function _draw(dt)
   end
   -- }}}
 
+  -- bullets {{{
   for _, value in ipairs(State.bullets) do
     gfx.rect_ex(value.location.x, value.location.y, 1, 1, 1, gfx.COLOR_WHITE)
   end
+  -- }}}
 
   -- UI {{{
 
@@ -398,6 +413,9 @@ function _draw(dt)
       "Da:" .. State.sprite_direction, 0, 30, 1, 0, gfx.COLOR_GREEN, .7)
     -- astroid count
     gfx.text_ex("Astroids: " .. #State.astroids, 0, 40, 1, 0, gfx.COLOR_GREEN, .7)
+    -- bullet count
+    gfx.text_ex("Bullets: " .. #State.bullets, 0, 50, 1, 0, gfx.COLOR_GREEN, .7)
+
     -- astroid colliders
     for _, value in ipairs(State.astroids) do
       gfx.rect_ex(
