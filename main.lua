@@ -27,6 +27,8 @@ function _init()
     astroids = {},
     -- {location, speed, direction}
     bullets = {},
+    ammo = 5,
+    last_bullet = 0,
     start_time = os.time(),
     time = 0,
     last_astroid = 0,
@@ -46,6 +48,13 @@ HEALTH_BAR = {
   thickness = 1,
   padding = 10,
 }
+AMMO_BAR = {
+  x = 117,
+  y = 5,
+  r = 3,
+  thickness = 1,
+  padding = 10
+}
 SCREEN = {
   w = 320,
   h = 180,
@@ -62,6 +71,9 @@ ASTROID_INTERVAL = 1
 HITSTOP_INTERVAL = .2
 DAMAGE = 5
 BULLET_SPEED = 200
+RELOAD_SPEED = 1
+MAX_AMMO = 5
+
 -- }}}
 
 -- helper functions {{{
@@ -171,8 +183,9 @@ function _update(dt)
     State.location.y = (State.location.y + State.input.y * SPEED * dt) % usagi.GAME_H
 
 
-    if input.pressed(input.BTN1) then
+    if input.pressed(input.BTN1) and State.ammo > 0 then
       spawn_bullet()
+      State.ammo -= 1
     end
   end
   -- }}}
@@ -267,6 +280,12 @@ function _update(dt)
   -- }}}
 
   -- bullets {{{
+
+  if State.ammo < MAX_AMMO and State.time - State.last_bullet > RELOAD_SPEED then
+    State.ammo += 1
+    State.last_bullet = State.time
+  end
+
   local destroy_bullets = {}
 
   for _, value in ipairs(State.bullets) do
@@ -381,6 +400,27 @@ function _draw(dt)
     gfx.COLOR_WHITE)
   -- }}}
 
+  -- ammo {{{
+  for i = 1, MAX_AMMO do
+    gfx.circ_ex(
+      usagi.GAME_W - AMMO_BAR.x + (i * AMMO_BAR.padding),
+      usagi.GAME_H - AMMO_BAR.y,
+      AMMO_BAR.r,
+      AMMO_BAR.thickness,
+      gfx.COLOR_WHITE
+    )
+    if State.ammo >= i then
+      gfx.circ_fill(
+        usagi.GAME_W - AMMO_BAR.x + (i * AMMO_BAR.padding),
+        usagi.GAME_H - AMMO_BAR.y,
+        AMMO_BAR.r,
+        gfx.COLOR_WHITE
+      )
+    end
+  end
+
+  -- }}}
+
   -- timer {{{
   local time = State.time .. ""
   gfx.text(time, (usagi.GAME_W / 2) - (usagi.measure_text(time) / 2), 0, gfx.COLOR_WHITE)
@@ -400,6 +440,7 @@ function _draw(dt)
     )
   end
   -- }}}
+
   -- }}}
 
   -- debug stuff {{{
@@ -415,6 +456,7 @@ function _draw(dt)
     gfx.text_ex("Astroids: " .. #State.astroids, 0, 40, 1, 0, gfx.COLOR_GREEN, .7)
     -- bullet count
     gfx.text_ex("Bullets: " .. #State.bullets, 0, 50, 1, 0, gfx.COLOR_GREEN, .7)
+    gfx.text_ex("Ammo: " .. State.ammo, 0, 60, 1, 0, gfx.COLOR_GREEN, .7)
 
     -- astroid colliders
     for _, value in ipairs(State.astroids) do
