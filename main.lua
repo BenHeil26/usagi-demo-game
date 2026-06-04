@@ -25,6 +25,8 @@ function _init()
     stopped = false,
     -- {sprite_idx, location, scale, rotation, speed, direction, spin}
     astroids = {},
+    -- {location, scale, frames}
+    shockwaves = {},
     -- {location, speed, direction}
     bullets = {},
     ammo = 5,
@@ -78,7 +80,7 @@ MAX_AMMO = 5
 ASTROID_SCORE = 100
 TIMER_OFFSET = 117
 SCORE_OFFSET = 60
-
+SHOCKWAVE_FRAMES = 12
 -- }}}
 
 -- helper functions {{{
@@ -143,8 +145,8 @@ local function spawn_astroid()
   })
 end
 
--- spawns a bullet at the front of the ship that fires in the direction
--- the ship is facing until it reaches an edge of the screen
+--- spawns a bullet at the front of the ship that fires in the direction
+--- the ship is facing until it reaches an edge of the screen
 local function spawn_bullet()
   -- get the starting location
   local start = {
@@ -161,6 +163,14 @@ local function spawn_bullet()
   })
 end
 
+--- spawns a shockwave at the specified location
+local function spawn_shockwave(location, scale)
+  table.insert(State.shockwaves, {
+    location = location,
+    scale = scale,
+    frames = 0,
+  })
+end
 -- }}}
 
 function _update(dt)
@@ -312,6 +322,8 @@ function _update(dt)
         State.score += ASTROID_SCORE * other.scale
         table.insert(destroy_astroids, jdx)
         table.insert(destroy_bullets, idx)
+        -- spawn at center of sprite
+        spawn_shockwave(value.location, other.scale)
       end
     end
 
@@ -326,6 +338,18 @@ function _update(dt)
 
   -- }}}
 
+  -- shockwaves {{{
+  local destroy_shockwaves = {}
+
+  for idx, value in ipairs(State.shockwaves) do
+    value.frames += 1
+    if value.frames > SHOCKWAVE_FRAMES then
+      table.insert(destroy_shockwaves, idx)
+    end
+  end
+
+  -- }}}
+
   for _, value in ipairs(destroy_astroids) do
     table.remove(State.astroids, value)
   end
@@ -333,6 +357,11 @@ function _update(dt)
   for _, value in ipairs(destroy_bullets) do
     table.remove(State.bullets, value)
   end
+
+  for _, value in ipairs(destroy_shockwaves) do
+    table.remove(State.shockwaves, value)
+  end
+
   -- }}}
 
   -- debug controls {{{
@@ -390,6 +419,13 @@ function _draw(dt)
   -- bullets {{{
   for _, value in ipairs(State.bullets) do
     gfx.rect_ex(value.location.x, value.location.y, 1, 1, 1, gfx.COLOR_WHITE)
+  end
+  -- }}}
+
+  -- shockwaves {{{
+  for _, value in ipairs(State.shockwaves) do
+    gfx.circ_fill(value.location.x, value.location.y,
+      value.frames * value.scale, gfx.COLOR_WHITE)
   end
   -- }}}
 
