@@ -1,8 +1,4 @@
 SPEED = 100
-SIZE = {
-  x = 10,
-  y = 10,
-}
 HEALTH_BAR = {
   x = 100,
   y = 5,
@@ -15,10 +11,6 @@ AMMO_BAR = {
   r = 3,
   thickness = 1,
   padding = 10
-}
-SCREEN = {
-  w = 320,
-  h = 180,
 }
 GAME_OVER_OFFSET = 16
 GAME_OVER_MULT = 2
