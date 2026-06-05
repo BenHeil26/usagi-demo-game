@@ -1,6 +1,8 @@
 -- imports {{{
+require('constants')
 local helpers = require("helpers")
-local Astroid = require("game_objects.astroids")
+local Astroid = require("game_objects.astroid")
+local Player  = require("game_objects.player")
 -- }}}
 
 function _config()
@@ -12,15 +14,27 @@ function _init()
   -- Stash mutable game state in a capitalized global like `State` so it
   -- survives reloads; F5 calls _init again to reset.
   --- @class State
+  --- @field player Player
   --- @field input Usagi.Vec2
   --- @field location Usagi.Vec2
   --- @field direction Usagi.Vec2
   --- @field sprite_direction number
-  --- @field healh integer
+  --- @field health integer
   --- @field stopped boolean
   --- @field astroids Astroid[]
   ---
   State = {
+    player = Player:new(
+      {
+        x = usagi.GAME_W / 2,
+        y = usagi.GAME_H / 2,
+      },
+      {
+        x = 1,
+        y = 0,
+      },
+      0
+    ),
     input = {
       x = 0,
       y = 0
@@ -36,12 +50,12 @@ function _init()
     -- angle in radians
     sprite_direction = 0,
     health = 100,
-    stopped = false,
     astroids = {},
     -- {location, scale, frames}
     shockwaves = {},
     -- {location, speed, direction}
     bullets = {},
+    stopped = false,
     ammo = 5,
     last_bullet = 0,
     time = 0,
@@ -60,9 +74,9 @@ end
 local function spawn_bullet()
   -- get the starting location
   local start = {
-    x = State.location.x + (usagi.SPRITE_SIZE / 2)
+    x = State.player.location.x + (usagi.SPRITE_SIZE / 2)
         + (State.direction.x * (usagi.SPRITE_SIZE / 2)),
-    y = State.location.y + (usagi.SPRITE_SIZE / 2)
+    y = State.player.location.y + (usagi.SPRITE_SIZE / 2)
         + (State.direction.y * (usagi.SPRITE_SIZE / 2))
   }
 
@@ -96,13 +110,11 @@ function _update(dt)
     -- TODO: lerp vector for smooth rotation (maybe)
     if helpers.vec_magnitude(State.input) ~= 0 then
       State.direction = State.input
-      State.sprite_direction = math.atan(State.input.y, State.input.x)
+      State.player.sprite_direction = math.atan(State.input.y, State.input.x)
     end
 
     State.input = util.vec_normalize(State.input)
-    State.location.x = (State.location.x + State.input.x * SPEED * dt) % usagi.GAME_W
-    State.location.y = (State.location.y + State.input.y * SPEED * dt) % usagi.GAME_H
-
+    State.player:update(dt, State.input)
 
     if input.pressed(input.BTN1) and State.ammo > 0 then
       spawn_bullet()
@@ -132,13 +144,7 @@ function _update(dt)
     astroid:update(dt)
 
     -- player collisions
-    if astroid:colliding_with(
-          {
-            x = State.location.x,
-            y = State.location.y,
-            w = usagi.SPRITE_SIZE,
-            h = usagi.SPRITE_SIZE,
-          })
+    if astroid:colliding_with(State.player:get_collider())
     then
       effect.hitstop(HITSTOP_INTERVAL)
       effect.flash(HITSTOP_INTERVAL, gfx.COLOR_RED)
@@ -276,13 +282,7 @@ function _draw(dt)
   gfx.clear(gfx.COLOR_DARK_GRAY)
 
   -- player {{{
-  gfx.spr_ex(
-    SPRITES.player,
-    State.location.x, State.location.y,
-    false, false,
-    State.sprite_direction,
-    gfx.COLOR_WHITE, 1
-  )
+  State.player:draw(dt)
   --}}}
 
   -- astroids {{{
@@ -384,7 +384,7 @@ function _draw(dt)
     gfx.text_ex(
       "D:" .. State.direction.x .. ", " .. State.direction.y, 0, 20, 1, 0, gfx.COLOR_GREEN, .5)
     gfx.text_ex(
-      "Da:" .. State.sprite_direction, 0, 30, 1, 0, gfx.COLOR_GREEN, .5)
+      "Da:" .. State.player.sprite_direction, 0, 30, 1, 0, gfx.COLOR_GREEN, .5)
     -- astroid count
     gfx.text_ex("Astroids: " .. #State.astroids, 0, 40, 1, 0, gfx.COLOR_GREEN, .5)
     -- bullet count
@@ -396,12 +396,7 @@ function _draw(dt)
       astroid:draw_debug(dt)
     end
     -- player collider
-    gfx.rect_ex(
-      State.location.x, State.location.y,
-      usagi.SPRITE_SIZE,
-      usagi.SPRITE_SIZE,
-      1, gfx.COLOR_GREEN
-    )
+    State.player:draw_debug(dt)
   end
   -- }}}
 end

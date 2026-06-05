@@ -1,4 +1,4 @@
-local helpers = require("../helpers")
+local helpers = require("helpers")
 --- @class Astroid
 --- @field sprite_idx integer the index of the sprite on the sprite sheet
 --- @field location Usagi.Vec2 the location in screen coords
@@ -39,6 +39,15 @@ function Astroid.spawn()
   return Astroid:new(sprite_idx, location, scale, rotation, speed, direction, spin)
 end
 
+--- Creates a new Astroid object
+--- @param sprite_idx integer
+--- @param location Usagi.Vec2
+--- @param scale integer
+--- @param rotation number
+--- @param speed integer
+--- @param direction Usagi.Vec2
+--- @param spin number
+--- @return Astroid
 function Astroid:new(sprite_idx, location, scale, rotation, speed, direction, spin)
   local instance = setmetatable({}, self)
   self.__index = self
@@ -78,7 +87,7 @@ function Astroid:is_oob()
 end
 
 --- updates self
---- @param dt number the time elapsed between this frame and the last one
+--- @param dt number the seconds elapsed between this frame and the last one
 function Astroid:update(dt)
   self.location = {
     x = self.location.x + (self.direction.x * self.speed * dt),
@@ -89,7 +98,7 @@ function Astroid:update(dt)
 end
 
 --- Draws self to the screen
---- @param dt number the time elapsed between this frame and the last one
+--- @param dt number the seconds elapsed between this frame and the last one
 function Astroid:draw(dt)
   helpers.spr_scaled(
     self.sprite_idx,
@@ -105,12 +114,8 @@ end
 --- Draws self to the screen
 --- @param dt number the time elapsed between this frame and the last one
 function Astroid:draw_debug(dt)
-  gfx.rect_ex(
-    self.location.x, self.location.y,
-    usagi.SPRITE_SIZE * self.scale,
-    usagi.SPRITE_SIZE * self.scale,
-    1, gfx.COLOR_RED
-  )
+  local rect = self:get_collider()
+  gfx.rect_ex(rect.x, rect.y, rect.w, rect.h, 1, gfx.COLOR_RED)
 end
 
 return Astroid
