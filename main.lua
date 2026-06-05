@@ -132,18 +132,12 @@ function _update(dt)
     astroid:update(dt)
 
     -- player collisions
-    if util.rect_overlap(
+    if astroid:colliding_with(
           {
             x = State.location.x,
             y = State.location.y,
             w = usagi.SPRITE_SIZE,
             h = usagi.SPRITE_SIZE,
-          },
-          {
-            x = astroid.location.x,
-            y = astroid.location.y,
-            w = usagi.SPRITE_SIZE * astroid.scale,
-            h = usagi.SPRITE_SIZE * astroid.scale,
           })
     then
       effect.hitstop(HITSTOP_INTERVAL)
@@ -154,21 +148,8 @@ function _update(dt)
 
     -- astroid collisions
     for jdx, other in ipairs(State.astroids) do
-      if idx == jdx then goto continue end -- don't compare value to value
-      if util.rect_overlap(
-            {
-              x = astroid.location.x,
-              y = astroid.location.y,
-              w = usagi.SPRITE_SIZE * astroid.scale,
-              h = usagi.SPRITE_SIZE * astroid.scale,
-            },
-            {
-              x = other.location.x,
-              y = other.location.y,
-              w = usagi.SPRITE_SIZE * other.scale,
-              h = usagi.SPRITE_SIZE * other.scale,
-            })
-      then
+      if idx == jdx then goto continue end -- don't compare self to self
+      if astroid:colliding_with(other:get_collider()) then
         local r1 = util.vec_normalize({
           x = other.direction.x - astroid.direction.x,
           y = other.direction.y - astroid.direction.y
@@ -184,10 +165,7 @@ function _update(dt)
     end
 
     -- astroid off screen
-    if
-        astroid.location.x < 0 or astroid.location.x > usagi.GAME_W or
-        astroid.location.y < 0 or astroid.location.y > usagi.GAME_H
-    then
+    if astroid:is_oob() then
       table.insert(destroy_astroids, idx)
     end
   end
@@ -308,16 +286,8 @@ function _draw(dt)
   --}}}
 
   -- astroids {{{
-  for _, value in ipairs(State.astroids) do
-    helpers.spr_scaled(
-      value.sprite_idx,
-      value.location.x, value.location.y,
-      false, false,
-      value.rotation,
-      gfx.COLOR_WHITE,
-      1,
-      value.scale
-    )
+  for _, astroid in ipairs(State.astroids) do
+    astroid:draw(dt)
   end
   -- }}}
 
@@ -422,13 +392,8 @@ function _draw(dt)
     gfx.text_ex("Ammo: " .. State.ammo, 0, 60, 1, 0, gfx.COLOR_GREEN, .5)
 
     -- astroid colliders
-    for _, value in ipairs(State.astroids) do
-      gfx.rect_ex(
-        value.location.x, value.location.y,
-        usagi.SPRITE_SIZE * value.scale,
-        usagi.SPRITE_SIZE * value.scale,
-        1, gfx.COLOR_RED
-      )
+    for _, astroid in ipairs(State.astroids) do
+      astroid:draw_debug(dt)
     end
     -- player collider
     gfx.rect_ex(

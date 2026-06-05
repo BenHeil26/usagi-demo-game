@@ -1,3 +1,4 @@
+local helpers = require("../helpers")
 --- @class Astroid
 --- @field sprite_idx integer the index of the sprite on the sprite sheet
 --- @field location Usagi.Vec2 the location in screen coords
@@ -51,6 +52,31 @@ function Astroid:new(sprite_idx, location, scale, rotation, speed, direction, sp
   return instance
 end
 
+--- Gets the bounding box of this astroid
+--- @return Usagi.Rect
+function Astroid:get_collider()
+  return {
+    x = self.location.x,
+    y = self.location.y,
+    w = usagi.SPRITE_SIZE * self.scale,
+    h = usagi.SPRITE_SIZE * self.scale,
+  }
+end
+
+--- Determines whether or not this astroid is colliding with another object
+--- @param other Usagi.Rect the other collider box
+--- @return boolean
+function Astroid:colliding_with(other)
+  return util.rect_overlap(self:get_collider(), other)
+end
+
+--- Determines whether or not this astroid is in valid screen space
+--- @return boolean
+function Astroid:is_oob()
+  return self.location.x < 0 or self.location.x > usagi.GAME_W or
+      self.location.y < 0 or self.location.y > usagi.GAME_H
+end
+
 --- updates self
 --- @param dt number the time elapsed between this frame and the last one
 function Astroid:update(dt)
@@ -63,8 +89,28 @@ function Astroid:update(dt)
 end
 
 --- Draws self to the screen
-function Astroid:draw()
+--- @param dt number the time elapsed between this frame and the last one
+function Astroid:draw(dt)
+  helpers.spr_scaled(
+    self.sprite_idx,
+    self.location.x, self.location.y,
+    false, false,
+    self.rotation,
+    gfx.COLOR_WHITE,
+    1,
+    self.scale
+  )
+end
 
+--- Draws self to the screen
+--- @param dt number the time elapsed between this frame and the last one
+function Astroid:draw_debug(dt)
+  gfx.rect_ex(
+    self.location.x, self.location.y,
+    usagi.SPRITE_SIZE * self.scale,
+    usagi.SPRITE_SIZE * self.scale,
+    1, gfx.COLOR_RED
+  )
 end
 
 return Astroid
