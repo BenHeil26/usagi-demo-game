@@ -4,7 +4,7 @@ local helpers = {}
 ---   returns 1 if true and 0 otherwise
 --- @param bool boolean
 --- @return integer
-function helpers:bool_to_int(bool)
+function helpers.bool_to_int(bool)
   return bool and 1 or 0
 end
 
@@ -14,7 +14,7 @@ end
 ---   m = sqrt(x^2 + y^2)
 --- @param vec Usagi.Vec2
 --- @return number
-function helpers:vec_magnitude(vec)
+function helpers.vec_magnitude(vec)
   return math.sqrt(vec.x ^ 2 + vec.y ^ 2)
 end
 
@@ -29,7 +29,7 @@ end
 ---@param tint integer
 ---@param alpha number
 ---@param scale integer
-function helpers:spr_scaled(idx, x, y, flip_x, flip_y, rotation, tint, alpha, scale)
+function helpers.spr_scaled(idx, x, y, flip_x, flip_y, rotation, tint, alpha, scale)
   gfx.sspr_ex(
     0, (idx - 1) * usagi.SPRITE_SIZE, -- adjust for 0 vs 1 based index
     usagi.SPRITE_SIZE, usagi.SPRITE_SIZE,

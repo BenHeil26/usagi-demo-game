@@ -87,14 +87,14 @@ function _update(dt)
   -- input and player movement {{{
   if not State.stopped then
     State.input = {
-      x = helpers:bool_to_int(input.held(input.RIGHT)) -
-          helpers:bool_to_int(input.held(input.LEFT)),
-      y = helpers:bool_to_int(input.held(input.DOWN)) -
-          helpers:bool_to_int(input.held(input.UP))
+      x = helpers.bool_to_int(input.held(input.RIGHT)) -
+          helpers.bool_to_int(input.held(input.LEFT)),
+      y = helpers.bool_to_int(input.held(input.DOWN)) -
+          helpers.bool_to_int(input.held(input.UP))
     }
 
     -- TODO: lerp vector for smooth rotation (maybe)
-    if helpers:vec_magnitude(State.input) ~= 0 then
+    if helpers.vec_magnitude(State.input) ~= 0 then
       State.direction = State.input
       State.sprite_direction = math.atan(State.input.y, State.input.x)
     end
@@ -309,7 +309,7 @@ function _draw(dt)
 
   -- astroids {{{
   for _, value in ipairs(State.astroids) do
-    helpers:spr_scaled(
+    helpers.spr_scaled(
       value.sprite_idx,
       value.location.x, value.location.y,
       false, false,
