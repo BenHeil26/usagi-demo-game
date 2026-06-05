@@ -1,3 +1,4 @@
+require("constants")
 local helpers = require("helpers")
 --- @class Player
 --- @field location Usagi.Vec2

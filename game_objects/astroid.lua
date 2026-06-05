@@ -1,3 +1,4 @@
+require("constants")
 local helpers = require("helpers")
 --- @class Astroid
 --- @field sprite_idx integer the index of the sprite on the sprite sheet

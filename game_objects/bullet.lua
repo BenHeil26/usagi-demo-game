@@ -1,3 +1,4 @@
+require("constants")
 --- @class Bullet
 --- @field location Usagi.Vec2 the current location of the bullet in screen coords
 --- @field speed integer the speed the bullet travels in pixels

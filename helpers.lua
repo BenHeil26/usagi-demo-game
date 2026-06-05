@@ -1,3 +1,4 @@
+require("constants")
 local helpers = {}
 
 --- Converts a boolean value to integer

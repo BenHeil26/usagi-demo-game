@@ -1,3 +1,4 @@
+require("constants")
 --- @class Shockwave
 --- @field location Usagi.Vec2 the location of the shockwave in screen coords
 --- @field scale integer the size of the shockwave in multiples of usagi.SPRITE_SIZE
