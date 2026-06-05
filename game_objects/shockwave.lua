@@ -28,4 +28,9 @@ function Shockwave:new(location, scale)
   return instance
 end
 
+function Shockwave:draw(dt)
+  gfx.circ_fill(self.location.x, self.location.y,
+    self.frames * self.scale, gfx.COLOR_WHITE)
+end
+
 return Shockwave

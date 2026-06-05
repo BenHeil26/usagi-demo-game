@@ -18,13 +18,18 @@ function _init()
   --- @class State
   --- @field player Player
   --- @field input Usagi.Vec2
-  --- @field location Usagi.Vec2
-  --- @field direction Usagi.Vec2
-  --- @field sprite_direction number
   --- @field health integer
-  --- @field stopped boolean
   --- @field astroids Astroid[]
-  ---
+  --- @field shockwaves Shockwave[]
+  --- @field bullets Bullet[]
+  --- @field stopped boolean
+  --- @field ammo integer
+  --- @field last_bullet number
+  --- @field time number
+  --- @field score integer
+  --- @field last_astroid number
+  --- @field debug boolean
+  --- @field shader_on boolean
   State = {
     player = Player:new(
       {
@@ -41,21 +46,9 @@ function _init()
       x = 0,
       y = 0
     },
-    location = {
-      x = usagi.GAME_W / 2,
-      y = usagi.GAME_H / 2,
-    },
-    direction = {
-      x = 1,
-      y = 0,
-    },
-    -- angle in radians
-    sprite_direction = 0,
     health = 100,
     astroids = {},
-    -- {location, scale, frames}
     shockwaves = {},
-    -- {location, speed, direction}
     bullets = {},
     stopped = false,
     ammo = 5,
@@ -231,26 +224,19 @@ end
 function _draw(dt)
   gfx.clear(gfx.COLOR_DARK_GRAY)
 
-  -- player {{{
+  -- game_objects {{{
   State.player:draw(dt)
-  --}}}
 
-  -- astroids {{{
   for _, astroid in ipairs(State.astroids) do
     astroid:draw(dt)
   end
-  -- }}}
 
-  -- bullets {{{
   for _, bullet in ipairs(State.bullets) do
-    gfx.rect_ex(bullet.location.x, bullet.location.y, 1, 1, 1, gfx.COLOR_WHITE)
+    bullet:draw(dt)
   end
-  -- }}}
 
-  -- shockwaves {{{
-  for _, value in ipairs(State.shockwaves) do
-    gfx.circ_fill(value.location.x, value.location.y,
-      value.frames * value.scale, gfx.COLOR_WHITE)
+  for _, shockwave in ipairs(State.shockwaves) do
+    shockwave:draw(dt)
   end
   -- }}}
 
@@ -332,7 +318,7 @@ function _draw(dt)
     gfx.text_ex(
       "I:" .. State.input.x .. ", " .. State.input.y, 0, 10, 1, 0, gfx.COLOR_GREEN, .5)
     gfx.text_ex(
-      "D:" .. State.direction.x .. ", " .. State.direction.y, 0, 20, 1, 0, gfx.COLOR_GREEN, .5)
+      "D:" .. State.player.direction.x .. ", " .. State.player.direction.y, 0, 20, 1, 0, gfx.COLOR_GREEN, .5)
     gfx.text_ex(
       "Da:" .. State.player.sprite_direction, 0, 30, 1, 0, gfx.COLOR_GREEN, .5)
     -- astroid count

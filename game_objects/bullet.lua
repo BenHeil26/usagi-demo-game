@@ -49,6 +49,10 @@ function Bullet:update(dt)
   }
 end
 
+function Bullet:draw(dt)
+  gfx.rect_ex(self.location.x, self.location.y, 1, 1, 1, gfx.COLOR_WHITE)
+end
+
 --- Returns true when this bullet collides with the other collider
 --- @param other Usagi.Rect
 --- @return boolean
