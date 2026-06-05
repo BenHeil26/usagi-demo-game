@@ -1,3 +1,4 @@
+local helpers = require("helpers")
 --- @class Player
 --- @field location Usagi.Vec2
 --- @field direction Usagi.Vec2
@@ -33,8 +34,14 @@ end
 --- @param dt number the seconds elapsed between this frame and the last one
 --- @param input any
 function Player:update(dt, input)
-  self.location.x = (self.location.x + input.x * SPEED * dt) % usagi.GAME_W
-  self.location.y = (self.location.y + input.y * SPEED * dt) % usagi.GAME_H
+  local normal = util.vec_normalize(input)
+  self.location.x = (self.location.x + normal.x * SPEED * dt) % usagi.GAME_W
+  self.location.y = (self.location.y + normal.y * SPEED * dt) % usagi.GAME_H
+
+  if helpers.vec_magnitude(input) ~= 0 then
+    self.direction = input
+    self.sprite_direction = math.atan(input.y, input.x)
+  end
 end
 
 --- Draws the player on the screen

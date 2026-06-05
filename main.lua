@@ -1,8 +1,10 @@
 -- imports {{{
 require('constants')
-local helpers = require("helpers")
-local Astroid = require("game_objects.astroid")
-local Player  = require("game_objects.player")
+local helpers   = require("helpers")
+local Astroid   = require("game_objects.astroid")
+local Player    = require("game_objects.player")
+local Bullet    = require("game_objects.bullet")
+local Shockwave = require("game_objects.shockwave")
 -- }}}
 
 function _config()
@@ -68,35 +70,6 @@ function _init()
   gfx.shader_set('crt')
 end
 
--- constructors {{{
---- spawns a bullet at the front of the ship that fires in the direction
---- the ship is facing until it reaches an edge of the screen
-local function spawn_bullet()
-  -- get the starting location
-  local start = {
-    x = State.player.location.x + (usagi.SPRITE_SIZE / 2)
-        + (State.direction.x * (usagi.SPRITE_SIZE / 2)),
-    y = State.player.location.y + (usagi.SPRITE_SIZE / 2)
-        + (State.direction.y * (usagi.SPRITE_SIZE / 2))
-  }
-
-  table.insert(State.bullets, {
-    location = start,
-    speed = BULLET_SPEED,
-    direction = State.direction,
-  })
-end
-
---- spawns a shockwave at the specified location
-local function spawn_shockwave(location, scale)
-  table.insert(State.shockwaves, {
-    location = location,
-    scale = scale,
-    frames = 0,
-  })
-end
--- }}}
-
 function _update(dt)
   -- input and player movement {{{
   if not State.stopped then
@@ -107,17 +80,10 @@ function _update(dt)
           helpers.bool_to_int(input.held(input.UP))
     }
 
-    -- TODO: lerp vector for smooth rotation (maybe)
-    if helpers.vec_magnitude(State.input) ~= 0 then
-      State.direction = State.input
-      State.player.sprite_direction = math.atan(State.input.y, State.input.x)
-    end
-
-    State.input = util.vec_normalize(State.input)
     State.player:update(dt, State.input)
 
     if input.pressed(input.BTN1) and State.ammo > 0 then
-      spawn_bullet()
+      table.insert(State.bullets, Bullet.spawn(State.player.location, State.player.direction))
       State.ammo -= 1
     end
   end
@@ -145,6 +111,7 @@ function _update(dt)
 
     -- player collisions
     if astroid:colliding_with(State.player:get_collider())
+        and not State.stopped
     then
       effect.hitstop(HITSTOP_INTERVAL)
       effect.flash(HITSTOP_INTERVAL, gfx.COLOR_RED)
@@ -156,6 +123,7 @@ function _update(dt)
     for jdx, other in ipairs(State.astroids) do
       if idx == jdx then goto continue end -- don't compare self to self
       if astroid:colliding_with(other:get_collider()) then
+        -- get 'bounce' vectors
         local r1 = util.vec_normalize({
           x = other.direction.x - astroid.direction.x,
           y = other.direction.y - astroid.direction.y
@@ -188,51 +156,33 @@ function _update(dt)
 
   local destroy_bullets = {}
 
-  for _, value in ipairs(State.bullets) do
-    value.location = {
-      x = value.location.x + value.direction.x * value.speed * dt,
-      y = value.location.y + value.direction.y * value.speed * dt,
-    }
-  end
+  for idx, bullet in ipairs(State.bullets) do
+    bullet:update(dt)
 
-  for idx, value in ipairs(State.bullets) do
     -- astroid collision
     for jdx, other in ipairs(State.astroids) do
-      if util.point_in_rect(
-            value.location,
-            {
-              x = other.location.x,
-              y = other.location.y,
-              w = usagi.SPRITE_SIZE * other.scale,
-              h = usagi.SPRITE_SIZE * other.scale,
-            }
-          )
-      then
+      if util.point_in_rect(bullet.location, other:get_collider()) then
         State.score += ASTROID_SCORE * other.scale
         table.insert(destroy_astroids, jdx)
         table.insert(destroy_bullets, idx)
         -- spawn at center of sprite
-        spawn_shockwave(value.location, other.scale)
+        table.insert(State.shockwaves, Shockwave.spawn(other.location, other.scale))
       end
     end
 
     -- bullet off screen
-    if
-        value.location.x < 0 or value.location.x > usagi.GAME_W or
-        value.location.y < 0 or value.location.y > usagi.GAME_H
-    then
+    if bullet:is_oob() then
       table.insert(destroy_bullets, idx)
     end
   end
-
   -- }}}
 
   -- shockwaves {{{
   local destroy_shockwaves = {}
 
-  for idx, value in ipairs(State.shockwaves) do
-    value.frames += 1
-    if value.frames > SHOCKWAVE_FRAMES then
+  for idx, shockwave in ipairs(State.shockwaves) do
+    shockwave.frames += 1
+    if shockwave.frames > SHOCKWAVE_FRAMES then
       table.insert(destroy_shockwaves, idx)
     end
   end
@@ -292,8 +242,8 @@ function _draw(dt)
   -- }}}
 
   -- bullets {{{
-  for _, value in ipairs(State.bullets) do
-    gfx.rect_ex(value.location.x, value.location.y, 1, 1, 1, gfx.COLOR_WHITE)
+  for _, bullet in ipairs(State.bullets) do
+    gfx.rect_ex(bullet.location.x, bullet.location.y, 1, 1, 1, gfx.COLOR_WHITE)
   end
   -- }}}
 
