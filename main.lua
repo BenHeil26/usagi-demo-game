@@ -1,10 +1,10 @@
 -- imports {{{
 require('constants')
-local helpers   = require("helpers")
-local Astroid   = require("game_objects.astroid")
-local Player    = require("game_objects.player")
-local Bullet    = require("game_objects.bullet")
-local Shockwave = require("game_objects.shockwave")
+local save_manager = require("save_manager")
+local helpers      = require("helpers")
+local Astroid      = require("game_objects.astroid")
+local Bullet       = require("game_objects.bullet")
+local Shockwave    = require("game_objects.shockwave")
 -- }}}
 
 function _config()
@@ -27,38 +27,11 @@ function _init()
   --- @field last_bullet number
   --- @field time number
   --- @field score integer
+  --- @field high_score integer
   --- @field last_astroid number
   --- @field debug boolean
   --- @field shader_on boolean
-  State = {
-    player = Player:new(
-      {
-        x = usagi.GAME_W / 2,
-        y = usagi.GAME_H / 2,
-      },
-      {
-        x = 1,
-        y = 0,
-      },
-      0
-    ),
-    input = {
-      x = 0,
-      y = 0
-    },
-    health = 100,
-    astroids = {},
-    shockwaves = {},
-    bullets = {},
-    stopped = false,
-    ammo = 5,
-    last_bullet = 0,
-    time = 0,
-    score = 0,
-    last_astroid = 0,
-    debug = false,
-    shader_on = true,
-  }
+  State = save_manager.load()
 
   gfx.shader_set('crt')
 end
@@ -86,6 +59,7 @@ function _update(dt)
   if State.health <= 0 and not State.stopped then
     State.stopped = true
     effect.screen_shake(2, 2)
+    save_manager.save(State)
   end
 
   if not State.stopped then
@@ -283,8 +257,10 @@ function _draw(dt)
   -- timer and score {{{
   local time = math.ceil(State.time) .. ""
   local score = State.score .. ""
+  local high_score = "HI " .. State.high_score
   gfx.text(time, usagi.GAME_W - TIMER_OFFSET, 0, gfx.COLOR_WHITE)
   gfx.text(score, usagi.GAME_W - SCORE_OFFSET, 0, gfx.COLOR_WHITE)
+  gfx.text(high_score, usagi.GAME_W - HIGH_SCORE_OFFSET, 0, gfx.COLOR_WHITE)
   -- }}}
 
   -- game over {{{
@@ -299,6 +275,15 @@ function _draw(dt)
       gfx.COLOR_RED,
       1
     )
+    if State.score > State.high_score then
+      local new_text = "NEW HIGH SCORE!"
+      gfx.text(
+        new_text,
+        (usagi.GAME_W / 2) - (usagi.measure_text(new_text) / 2),
+        (usagi.GAME_H / 2) - HIGH_SCORE_OFFSET,
+        gfx.COLOR_RED
+      )
+    end
   end
   -- }}}
 
