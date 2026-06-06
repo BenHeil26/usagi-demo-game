@@ -275,7 +275,9 @@ function _draw(dt)
       gfx.COLOR_RED,
       1
     )
-    if State.score > State.high_score then
+    if State.score > State.high_score and
+        usagi.elapsed % 2 < 1 -- make the text flash
+    then
       local new_text = "NEW HIGH SCORE!"
       gfx.text(
         new_text,
