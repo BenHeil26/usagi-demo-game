@@ -1,11 +1,14 @@
 --- @class Scene base class for Scenes, should not be used directly
+--- @field manager SceneManager
 local Scene = {}
 
 --- Creates a new scene object, should never be invoked directly
+--- @param manager SceneManager a reference to the current scene manager
 --- @return Scene
-function Scene:new()
+function Scene:new(manager)
   local instance = setmetatable({}, self)
   self.__index = self
+  instance.manager = manager
   return instance
 end
 

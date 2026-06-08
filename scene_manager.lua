@@ -1,4 +1,5 @@
 local GameScene = require "scenes.game_scene"
+local MenuScene = require "scenes.menu_scene"
 --- @class SceneManager
 --- @field scenes Scene[] An array of possible scenes, scenes are registered in code
 --- @field current Scene The currently loaded scene (defaults to scenes[1])
@@ -10,7 +11,8 @@ function SceneManager:new()
   local instance = setmetatable({}, self)
   self.__index = self
   instance.scenes = {
-    GameScene:new()
+    MenuScene:new(instance),
+    GameScene:new(instance),
   }
   instance.current = instance.scenes[1]
   instance.current:load()

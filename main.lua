@@ -1,7 +1,12 @@
 local SceneManager = require("scene_manager")
 
 function _config()
-  return { name = "Astroids", game_id = "com.usagiengine.astroids" }
+  return {
+    name = "Astroids",
+    game_id = "com.usagiengine.astroids",
+    pause_menu = false,
+    icon = 1
+  }
 end
 
 function _init()

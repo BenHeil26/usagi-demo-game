@@ -1,4 +1,4 @@
-require('constants')
+require("constants")
 local Scene        = require("scene")
 local save_manager = require("save_manager")
 local helpers      = require("helpers")
@@ -10,8 +10,8 @@ local Shockwave    = require("game_objects.shockwave")
 --- @field state State the current state of the scene
 local GameScene    = setmetatable({}, { __index = Scene })
 
-function GameScene:new()
-  local instance = Scene.new(self)
+function GameScene:new(manager)
+  local instance = Scene.new(self, manager)
   self.__index = self
   return instance
 end
