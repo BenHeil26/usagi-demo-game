@@ -36,7 +36,7 @@ end
 function MenuScene:draw(dt)
   -- title
   gfx.text_ex(
-    "Astroids",
+    "Asteroids",
     TITLE_POSITION.x,
     TITLE_POSITION.y,
     3,

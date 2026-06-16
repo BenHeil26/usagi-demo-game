@@ -2,8 +2,8 @@ local SceneManager = require("scene_manager")
 
 function _config()
   return {
-    name = "Astroids",
-    game_id = "com.usagiengine.astroids",
+    name = "Asteroids",
+    game_id = "com.usagiengine.asteroids",
     pause_menu = false,
     icon = 1
   }
